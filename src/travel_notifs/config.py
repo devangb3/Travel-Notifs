@@ -16,7 +16,6 @@ class Settings(BaseSettings):
     dry_run: bool = True
 
     google_maps_api_key: str = ""
-    google_routes_api_key: str = ""
     telegram_bot_token: str = ""
     resend_api_key: str = ""
     email_from: str = "Transit Dispatch <alerts@example.com>"
@@ -27,11 +26,7 @@ class Settings(BaseSettings):
 
     @property
     def demo_mode(self) -> bool:
-        return not self.routes_key
-
-    @property
-    def routes_key(self) -> str:
-        return self.google_routes_api_key or self.google_maps_api_key
+        return not self.google_maps_api_key
 
 
 @lru_cache

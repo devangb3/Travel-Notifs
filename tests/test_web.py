@@ -13,7 +13,6 @@ def app_for(tmp_path: Path):
             database_path=tmp_path / "web.db",
             app_env="development",
             google_maps_api_key="",
-            google_routes_api_key="",
         )
     )
     return app
@@ -162,7 +161,6 @@ async def test_creates_telegram_deep_link(tmp_path: Path, monkeypatch: pytest.Mo
             app_env="development",
             telegram_bot_token="secret",
             google_maps_api_key="",
-            google_routes_api_key="",
         )
     )
     transport = httpx.ASGITransport(app=app)
