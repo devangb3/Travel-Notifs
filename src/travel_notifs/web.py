@@ -42,7 +42,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     database = Database(settings.database_path)
     database.initialize()
     demo_planner = DemoPlanner()
-    google = GoogleTransitProvider(settings.routes_key) if settings.routes_key else None
+    google = (
+        GoogleTransitProvider(settings.google_maps_api_key)
+        if settings.google_maps_api_key
+        else None
+    )
     telegram = (
         TelegramNotifier(settings.telegram_bot_token) if settings.telegram_bot_token else None
     )

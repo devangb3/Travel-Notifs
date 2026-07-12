@@ -10,10 +10,10 @@ from travel_notifs.planning import GoogleTransitProvider, PlanningError
 
 async def main() -> None:
     settings = get_settings()
-    if not settings.routes_key:
-        raise SystemExit("GOOGLE_MAPS_API_KEY or GOOGLE_ROUTES_API_KEY is not configured")
+    if not settings.google_maps_api_key:
+        raise SystemExit("GOOGLE_MAPS_API_KEY is not configured")
 
-    provider = GoogleTransitProvider(settings.routes_key)
+    provider = GoogleTransitProvider(settings.google_maps_api_key)
     try:
         origins = await provider.autocomplete("Parker Road Station", AgencyId.DART, "smoke")
         destinations = await provider.autocomplete("Downtown Plano Station", AgencyId.DART, "smoke")
