@@ -1,0 +1,48 @@
+name: travel-notifs
+
+services:
+  web:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_PATH: /app/data/travel_notifs.db
+    volumes:
+      - app-data:/app/data
+    restart: unless-stopped
+    mem_limit: 384m
+
+  worker:
+    build: .
+    command: ["python", "-m", "travel_notifs.worker"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_PATH: /app/data/travel_notifs.db
+    volumes:
+      - app-data:/app/data
+    restart: unless-stopped
+    mem_limit: 256m
+
+  caddy:
+    image: caddy:2.10-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+    mem_limit: 96m
+
+volumes:
+  app-data:
+  caddy-data:
+  caddy-config:

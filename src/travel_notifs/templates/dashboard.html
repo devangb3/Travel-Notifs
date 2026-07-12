@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f0eadb">
+    <title>Transit Dispatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+    <script src="{{ url_for('static', path='/app.js') }}" defer></script>
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="masthead">
+      <a class="brand" href="/" aria-label="Transit Dispatch home">
+        <span class="brand-mark">TD</span>
+        <span>Transit<br>Dispatch</span>
+      </a>
+      <div class="system-state">
+        <span class="pulse"></span>
+        {% if demo_mode %}Demo feeds{% else %}Live feeds{% endif %}
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Arrival intelligence · DART + Unitrans</p>
+        <h1>Know the minute.<br><span>Make your own call.</span></h1>
+        <p class="lede">Choose a trip. We watch the live feed and message you when the arrival moves.</p>
+      </section>
+
+      <section class="dispatch-grid">
+        <form id="planner" class="planner-card">
+          <div class="card-label"><span>01</span> Set the trip</div>
+          <label>
+            Transit system
+            <span class="select-wrap">
+              <select name="agency_id" required>
+                {% for agency in agencies %}
+                  <option value="{{ agency.id }}">{{ agency.short_name }} · {{ agency.name }}</option>
+                {% endfor %}
+              </select>
+            </span>
+          </label>
+          <label class="place-field">
+            Starting from
+            <input name="origin" type="text" placeholder="Home, campus, or street address" autocomplete="street-address" required minlength="3">
+            <input name="origin_place_id" type="hidden">
+            <span class="suggestions" role="listbox"></span>
+          </label>
+          <button class="swap" type="button" aria-label="Swap origin and destination">↕</button>
+          <label class="place-field">
+            Going to
+            <input name="destination" type="text" placeholder="Office, station, or destination" required minlength="3">
+            <input name="destination_place_id" type="hidden">
+            <span class="suggestions" role="listbox"></span>
+          </label>
+          <div class="time-row">
+            <label>
+              Timing
+              <select name="timing_mode">
+                <option value="depart">Depart at</option>
+                <option value="arrive">Arrive by</option>
+              </select>
+            </label>
+            <label>
+              Date and time
+              <input name="travel_at" type="datetime-local" required>
+            </label>
+          </div>
+          <fieldset>
+            <legend>Repeats</legend>
+            <div class="segmented">
+              <label><input type="radio" name="recurrence" value="once" checked><span>Once</span></label>
+              <label><input type="radio" name="recurrence" value="weekly"><span>Weekly</span></label>
+            </div>
+          </fieldset>
+          <div class="weekdays" hidden>
+            {% for day in ['M','T','W','T','F','S','S'] %}
+              <label><input type="checkbox" name="weekdays" value="{{ loop.index0 }}"><span>{{ day }}</span></label>
+            {% endfor %}
+          </div>
+          <button class="primary" type="submit"><span>Find trips</span><span aria-hidden="true">→</span></button>
+          <p class="form-note">Alerts at 15, 10, and 5 minutes, plus changes of 2+ minutes.</p>
+        </form>
+
+        <section class="results-card" aria-live="polite">
+          <div class="card-label"><span>02</span> Choose a run</div>
+          <div id="results" class="empty-state">
+            <div class="route-glyph">◉━━◉</div>
+            <p>Your route options will line up here.</p>
+            <small>We show arrival predictions—not advice about when to leave.</small>
+          </div>
+        </section>
+      </section>
+
+      <section class="channel-card">
+        <div>
+          <p class="eyebrow">Delivery channel</p>
+          <h2>Telegram</h2>
+          {% if telegram_paired %}
+            <p>Your Telegram account is connected. Arrival alerts will be delivered there when live sending is enabled.</p>
+          {% elif telegram_available %}
+            <p>Connect your private chat with the bot using a one-time link.</p>
+          {% else %}
+            <p>The Telegram bot has not been configured on this deployment.</p>
+          {% endif %}
+        </div>
+        {% if telegram_paired %}
+          <span class="channel-state connected">Connected</span>
+        {% elif telegram_available %}
+          <button id="connect-telegram" class="channel-action" type="button">Connect Telegram</button>
+        {% else %}
+          <span class="channel-state">Unavailable</span>
+        {% endif %}
+        <div id="telegram-pairing" class="pairing-result" aria-live="polite"></div>
+      </section>
+
+      <section class="saved-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Your board</p>
+            <h2>Monitored trips</h2>
+          </div>
+          <span class="count">{{ "%02d"|format(trips|length) }}</span>
+        </div>
+        <div class="trip-list">
+          {% for trip in trips %}
+            <article class="trip-row">
+              <div class="agency-stamp {{ trip.agency_id }}">{{ trip.agency_id }}</div>
+              <div class="trip-path">
+                <strong>{{ trip.origin_label }}</strong>
+                <span>to</span>
+                <strong>{{ trip.destination_label }}</strong>
+              </div>
+              <div class="trip-meta">
+                {{ trip.timing_mode }} · {{ trip.travel_at[0:16]|replace('T', ' ') }}
+                {% if trip.recurrence == 'weekly' %}<br>weekly · {{ trip.weekdays }}{% endif %}
+              </div>
+              <form action="/api/trips/{{ trip.id }}/status" method="post">
+                <input type="hidden" name="status" value="{{ 'active' if trip.status == 'paused' else 'paused' }}">
+                <button class="status {{ trip.status }}" type="submit">{{ trip.status }}</button>
+              </form>
+            </article>
+          {% else %}
+            <div class="no-trips">No monitored trips yet. Your first one takes about thirty seconds.</div>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+    <footer><span>Private beta · invite only</span><span>Dallas ↔ Davis</span></footer>
+  </body>
+</html>

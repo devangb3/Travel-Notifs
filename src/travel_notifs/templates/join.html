@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Join Transit Dispatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body class="join-page">
+    <main class="join-card">
+      <p class="eyebrow">Private beta invitation</p>
+      <h1>Welcome aboard.</h1>
+      <p>Set a name for your private arrival board.</p>
+      <form method="post">
+        <label>Your name<input name="display_name" required minlength="2" maxlength="80" autofocus></label>
+        <button class="primary" type="submit"><span>Accept invitation</span><span>→</span></button>
+      </form>
+    </main>
+  </body>
+</html>
+
