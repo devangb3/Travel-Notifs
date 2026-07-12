@@ -86,6 +86,14 @@ function clock(iso) {
 }
 
 function renderItineraries(itineraries, trip) {
+  if (!itineraries.length) {
+    results.className = "empty-state";
+    results.innerHTML = `<div class="route-glyph">◉━━◉</div>
+      <p>No transit trips found for this time.</p>
+      <small>Try an earlier time or a different stop.</small>`;
+    return;
+  }
+
   results.className = "itineraries";
   results.innerHTML = itineraries.map((item, index) => {
     const transit = item.legs.find((leg) => leg.mode !== "WALK");

@@ -1,6 +1,18 @@
+import logging
+
 import httpx
 
 from travel_notifs.notifications import DryRunNotifier, TelegramNotifier
+
+
+def test_telegram_token_is_not_written_to_httpx_logs(caplog) -> None:
+    logger = logging.getLogger("httpx")
+    with caplog.at_level(logging.INFO, logger="httpx"):
+        logger.info("HTTP Request: GET https://api.telegram.org/botsecret-token/getMe")
+        logger.info("HTTP Request: POST https://routes.googleapis.com/directions/v2:computeRoutes")
+
+    assert "secret-token" not in caplog.text
+    assert "routes.googleapis.com" in caplog.text
 
 
 async def test_dry_run_notifier_records_without_delivery() -> None:

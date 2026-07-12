@@ -1,7 +1,16 @@
+import logging
 from dataclasses import dataclass
 from typing import Protocol
 
 import httpx
+
+
+class _TelegramRequestFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "api.telegram.org/bot" not in record.getMessage()
+
+
+logging.getLogger("httpx").addFilter(_TelegramRequestFilter())
 
 
 class NotificationError(RuntimeError):
