@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "Transit Dispatch <alerts@example.com>"
 
-    poll_interval_seconds: int = Field(default=120, ge=30, le=600)
+    poll_interval_seconds: int = Field(default=45, ge=30, le=600)
     eta_change_threshold_minutes: int = Field(default=2, ge=1, le=30)
     notification_cooldown_seconds: int = Field(default=120, ge=0, le=3600)
 
