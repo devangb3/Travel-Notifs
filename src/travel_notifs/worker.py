@@ -32,7 +32,9 @@ class Worker:
         self.database.initialize()
         self.stopping = asyncio.Event()
         self.provider = (
-            GoogleTransitProvider(self.settings.routes_key) if self.settings.routes_key else None
+            GoogleTransitProvider(self.settings.google_maps_api_key)
+            if self.settings.google_maps_api_key
+            else None
         )
         self.alert_engine = AlertEngine(
             eta_change_minutes=self.settings.eta_change_threshold_minutes,
@@ -52,7 +54,7 @@ class Worker:
     async def tick(self, now: datetime | None = None) -> None:
         now = now or datetime.now(tz=UTC)
         if not self.provider:
-            logger.info("monitor tick skipped: Google Routes key is not configured")
+            logger.info("monitor tick skipped: Google Maps API key is not configured")
             return
 
         monitored = self.database.list_active_monitored_trips()
