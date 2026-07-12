@@ -55,7 +55,7 @@ async def test_dashboard_displays_trip_in_agency_timezone(tmp_path: Path) -> Non
             json={
                 "origin": "Davis",
                 "destination": "Sacramento Airport",
-                "travel_at": "2026-07-12T04:30:00+00:00",
+                "travel_at": "2099-07-12T04:30:00+00:00",
                 "timing_mode": "depart",
                 "agency_id": "yolobus",
                 "recurrence": "once",
@@ -65,7 +65,62 @@ async def test_dashboard_displays_trip_in_agency_timezone(tmp_path: Path) -> Non
         response = await web.get("/")
 
     assert created.status_code == 201
-    assert "2026-07-11 21:30 PDT" in response.text
+    assert "2099-07-11 21:30 PDT" in response.text
+
+
+async def test_dashboard_lazy_loads_paused_and_past_trips(tmp_path: Path) -> None:
+    transport = httpx.ASGITransport(app=app_for(tmp_path))
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as web:
+        future = await web.post(
+            "/api/trips",
+            json={
+                "origin": "Upcoming Origin",
+                "destination": "Upcoming Destination",
+                "travel_at": "2099-07-12T04:30:00+00:00",
+                "timing_mode": "depart",
+                "agency_id": "yolobus",
+                "recurrence": "once",
+                "itinerary_id": "future",
+            },
+        )
+        paused = await web.post(
+            "/api/trips",
+            json={
+                "origin": "Paused Origin",
+                "destination": "Paused Destination",
+                "travel_at": "2099-07-12T05:30:00+00:00",
+                "timing_mode": "depart",
+                "agency_id": "yolobus",
+                "recurrence": "once",
+                "itinerary_id": "paused",
+            },
+        )
+        await web.post(f"/api/trips/{paused.json()['id']}/status", data={"status": "paused"})
+        await web.post(
+            "/api/trips",
+            json={
+                "origin": "Past Origin",
+                "destination": "Past Destination",
+                "travel_at": "2020-07-12T04:30:00+00:00",
+                "timing_mode": "depart",
+                "agency_id": "yolobus",
+                "recurrence": "once",
+                "itinerary_id": "past",
+            },
+        )
+
+        dashboard = await web.get("/")
+        paused_rows = await web.get("/api/trips/paused")
+        past_rows = await web.get("/api/trips/past")
+
+    assert future.status_code == 201
+    assert "Upcoming Origin" in dashboard.text
+    assert "Paused Origin" not in dashboard.text
+    assert "Past Origin" not in dashboard.text
+    assert "Paused Origin" in paused_rows.text
+    assert "Past Origin" not in paused_rows.text
+    assert "Past Origin" in past_rows.text
+    assert "Paused Origin" not in past_rows.text
 
 
 async def test_invitation_creates_production_session(tmp_path: Path) -> None:

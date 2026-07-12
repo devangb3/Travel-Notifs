@@ -7,8 +7,12 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Literal
 
 from travel_notifs.domain import AlertState
+
+TRIP_MONITOR_GRACE = timedelta(minutes=5)
+TripView = Literal["monitored", "paused", "past"]
 
 SCHEMA = """
 PRAGMA journal_mode = WAL;
@@ -265,6 +269,39 @@ class Database:
             ).fetchall()
         return [TripRecord(**dict(row)) for row in rows]
 
+    def list_dashboard_trips(
+        self,
+        user_id: int,
+        view: TripView,
+        now: datetime | None = None,
+    ) -> list[TripRecord]:
+        now = now or datetime.now(tz=UTC)
+        return [
+            _trip_record(row)
+            for row in self._list_dashboard_rows(user_id)
+            if _trip_view(row, now) == view
+        ]
+
+    def dashboard_trip_counts(
+        self, user_id: int, now: datetime | None = None
+    ) -> dict[TripView, int]:
+        now = now or datetime.now(tz=UTC)
+        counts: dict[TripView, int] = {"monitored": 0, "paused": 0, "past": 0}
+        for row in self._list_dashboard_rows(user_id):
+            counts[_trip_view(row, now)] += 1
+        return counts
+
+    def _list_dashboard_rows(self, user_id: int) -> list[sqlite3.Row]:
+        with self.connect() as connection:
+            return connection.execute(
+                """
+                SELECT id, agency_id, origin_label, destination_label, timing_mode,
+                       travel_at, recurrence, weekdays, status, selected_itinerary
+                FROM trips WHERE user_id = ? ORDER BY created_at DESC
+                """,
+                (user_id,),
+            ).fetchall()
+
     def list_active_monitored_trips(self) -> list[MonitoredTrip]:
         with self.connect() as connection:
             rows = connection.execute(
@@ -387,3 +424,32 @@ class Database:
                 (status, trip_id, user_id),
             )
             return cursor.rowcount == 1
+
+
+def _trip_record(row: sqlite3.Row) -> TripRecord:
+    values = dict(row)
+    values.pop("selected_itinerary")
+    return TripRecord(**values)
+
+
+def _trip_view(row: sqlite3.Row, now: datetime) -> TripView:
+    if row["recurrence"] == "once" and now > _trip_boarding_time(row) + TRIP_MONITOR_GRACE:
+        return "past"
+    return "paused" if row["status"] == "paused" else "monitored"
+
+
+def _trip_boarding_time(row: sqlite3.Row) -> datetime:
+    try:
+        itinerary = json.loads(row["selected_itinerary"])
+        legs = itinerary.get("legs", [])
+        boarding = next(
+            str(leg["start_time"])
+            for leg in legs
+            if isinstance(leg, dict) and leg.get("fingerprint") and leg.get("start_time")
+        )
+    except (json.JSONDecodeError, KeyError, StopIteration, TypeError):
+        boarding = str(row["travel_at"])
+    parsed = datetime.fromisoformat(boarding)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)

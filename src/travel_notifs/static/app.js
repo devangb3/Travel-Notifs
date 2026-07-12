@@ -3,6 +3,32 @@ const results = document.querySelector("#results");
 const sessionToken = crypto.randomUUID();
 const telegramButton = document.querySelector("#connect-telegram");
 
+document.querySelectorAll("[data-trip-toggle]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const panel = document.getElementById(button.getAttribute("aria-controls"));
+    const opening = button.getAttribute("aria-expanded") !== "true";
+    button.setAttribute("aria-expanded", String(opening));
+    button.querySelector(".drawer-meta i").textContent = opening ? "−" : "+";
+
+    if (!opening) {
+      panel.hidden = true;
+      return;
+    }
+
+    panel.hidden = false;
+    if (panel.dataset.loaded === "true") return;
+    panel.innerHTML = '<div class="drawer-loading">Loading trips…</div>';
+    try {
+      const response = await fetch(button.dataset.url);
+      if (!response.ok) throw new Error("Could not load trips right now");
+      panel.innerHTML = await response.text();
+      panel.dataset.loaded = "true";
+    } catch (error) {
+      panel.innerHTML = `<div class="no-trips">${escapeHtml(error.message)}</div>`;
+    }
+  });
+});
+
 if (telegramButton) {
   telegramButton.addEventListener("click", async () => {
     const result = document.querySelector("#telegram-pairing");

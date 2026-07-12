@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from travel_notifs.domain import AlertState
@@ -28,6 +29,53 @@ def test_create_and_pause_trip(tmp_path: Path) -> None:
     )
     assert database.set_trip_status(user_id, trip_id, "paused")
     assert database.list_trips(user_id)[0].status == "paused"
+
+
+def test_dashboard_groups_upcoming_paused_and_past_trips(tmp_path: Path) -> None:
+    database = Database(tmp_path / "dashboard.db")
+    database.initialize()
+    user_id = database.get_or_create_development_user()
+    now = datetime(2026, 7, 12, 12, 0, tzinfo=UTC)
+
+    def create(label: str, boarding: datetime, *, recurrence: str = "once") -> int:
+        return database.create_trip(
+            user_id,
+            {
+                "agency_id": "yolobus",
+                "origin_label": label,
+                "destination_label": "Destination",
+                "timing_mode": "depart",
+                "travel_at": boarding.isoformat(),
+                "recurrence": recurrence,
+                "selected_itinerary": {
+                    "legs": [
+                        {
+                            "start_time": boarding.isoformat(),
+                            "fingerprint": f"{label}-leg",
+                        }
+                    ]
+                },
+            },
+        )
+
+    upcoming_id = create("Upcoming", now + timedelta(hours=1))
+    paused_id = create("Paused", now + timedelta(hours=2))
+    past_id = create("Past", now - timedelta(minutes=6))
+    weekly_id = create("Weekly", now - timedelta(days=7), recurrence="weekly")
+    assert database.set_trip_status(user_id, paused_id, "paused")
+
+    monitored = database.list_dashboard_trips(user_id, "monitored", now)
+    paused = database.list_dashboard_trips(user_id, "paused", now)
+    past = database.list_dashboard_trips(user_id, "past", now)
+
+    assert {trip.id for trip in monitored} == {upcoming_id, weekly_id}
+    assert [trip.id for trip in paused] == [paused_id]
+    assert [trip.id for trip in past] == [past_id]
+    assert database.dashboard_trip_counts(user_id, now) == {
+        "monitored": 2,
+        "paused": 1,
+        "past": 1,
+    }
 
 
 def test_lists_monitorable_trip_and_deduplicates_delivery(tmp_path: Path) -> None:

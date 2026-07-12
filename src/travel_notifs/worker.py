@@ -12,7 +12,7 @@ from travel_notifs.config import get_settings
 from travel_notifs.domain import PredictionStatus, StopPrediction
 from travel_notifs.notifications import NotificationError, ResendNotifier, TelegramNotifier
 from travel_notifs.planning import GoogleTransitProvider, Itinerary, Leg, PlanningError
-from travel_notifs.storage import Database, MonitoredTrip
+from travel_notifs.storage import TRIP_MONITOR_GRACE, Database, MonitoredTrip
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +21,6 @@ logging.basicConfig(
 logger = logging.getLogger("travel_notifs.worker")
 
 MONITOR_LEAD = timedelta(minutes=20)
-MONITOR_GRACE = timedelta(minutes=5)
 MATCH_WINDOW = timedelta(minutes=20)
 
 
@@ -199,7 +198,8 @@ def due_request(trip: MonitoredTrip, now: datetime) -> datetime | None:
     if trip.recurrence == "once":
         return (
             original_request
-            if original_boarding - MONITOR_LEAD <= now <= original_boarding + MONITOR_GRACE
+            if original_boarding - MONITOR_LEAD <= now
+            <= original_boarding + TRIP_MONITOR_GRACE
             else None
         )
 
@@ -220,7 +220,11 @@ def due_request(trip: MonitoredTrip, now: datetime) -> datetime | None:
             tzinfo=agency_zone,
         )
         candidate_boarding = candidate_request + boarding_offset
-        if candidate_boarding - MONITOR_LEAD <= local_now <= candidate_boarding + MONITOR_GRACE:
+        if (
+            candidate_boarding - MONITOR_LEAD
+            <= local_now
+            <= candidate_boarding + TRIP_MONITOR_GRACE
+        ):
             return candidate_request.astimezone(UTC)
     return None
 

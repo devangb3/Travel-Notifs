@@ -124,30 +124,32 @@
             <p class="eyebrow">Your board</p>
             <h2>Monitored trips</h2>
           </div>
-          <span class="count">{{ "%02d"|format(trips|length) }}</span>
+          <span class="count">{{ "%02d"|format(trip_counts.monitored) }}</span>
         </div>
         <div class="trip-list">
-          {% for trip in trips %}
-            <article class="trip-row">
-              <div class="agency-stamp {{ trip.agency_id }}">{{ trip.agency_id }}</div>
-              <div class="trip-path">
-                <strong>{{ trip.origin_label }}</strong>
-                <span>to</span>
-                <strong>{{ trip.destination_label }}</strong>
-              </div>
-              <div class="trip-meta">
-                {{ trip.timing_mode }} · {{ trip.travel_at|trip_time(trip.agency_id) }}
-                {% if trip.recurrence == 'weekly' %}<br>weekly · {{ trip.weekdays }}{% endif %}
-              </div>
-              <form action="/api/trips/{{ trip.id }}/status" method="post">
-                <input type="hidden" name="status" value="{{ 'active' if trip.status == 'paused' else 'paused' }}">
-                <button class="status {{ trip.status }}" type="submit">{{ trip.status }}</button>
-              </form>
-            </article>
-          {% else %}
-            <div class="no-trips">No monitored trips yet. Your first one takes about thirty seconds.</div>
-          {% endfor %}
+          {% set trip_view = 'monitored' %}
+          {% include '_trip_rows.html' %}
         </div>
+
+        {% for view, label in [('paused', 'Paused trips'), ('past', 'Past trips')] %}
+          <section class="trip-drawer">
+            <button
+              class="trip-drawer-toggle"
+              type="button"
+              data-trip-toggle
+              data-url="/api/trips/{{ view }}"
+              aria-expanded="false"
+              aria-controls="{{ view }}-trips"
+            >
+              <span><small>Your board</small>{{ label }}</span>
+              <span class="drawer-meta">
+                <b>{{ "%02d"|format(trip_counts[view]) }}</b>
+                <i aria-hidden="true">+</i>
+              </span>
+            </button>
+            <div id="{{ view }}-trips" class="trip-list trip-drawer-panel" hidden></div>
+          </section>
+        {% endfor %}
       </section>
     </main>
     <footer><span>Private beta · invite only</span><span>Dallas ↔ Davis</span></footer>

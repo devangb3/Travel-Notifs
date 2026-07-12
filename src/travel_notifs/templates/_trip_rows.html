@@ -1,0 +1,32 @@
+{% for trip in trips %}
+  <article class="trip-row">
+    <div class="agency-stamp {{ trip.agency_id }}">{{ trip.agency_id }}</div>
+    <div class="trip-path">
+      <strong>{{ trip.origin_label }}</strong>
+      <span>to</span>
+      <strong>{{ trip.destination_label }}</strong>
+    </div>
+    <div class="trip-meta">
+      {{ trip.timing_mode }} · {{ trip.travel_at|trip_time(trip.agency_id) }}
+      {% if trip.recurrence == 'weekly' %}<br>weekly · {{ trip.weekdays }}{% endif %}
+    </div>
+    {% if trip_view == 'past' %}
+      <span class="status past">past</span>
+    {% else %}
+      <form action="/api/trips/{{ trip.id }}/status" method="post">
+        <input type="hidden" name="status" value="{{ 'active' if trip.status == 'paused' else 'paused' }}">
+        <button class="status {{ trip.status }}" type="submit">{{ trip.status }}</button>
+      </form>
+    {% endif %}
+  </article>
+{% else %}
+  <div class="no-trips">
+    {% if trip_view == 'monitored' %}
+      No upcoming monitored trips.
+    {% elif trip_view == 'paused' %}
+      No paused trips.
+    {% else %}
+      No past trips yet.
+    {% endif %}
+  </div>
+{% endfor %}

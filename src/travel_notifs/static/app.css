@@ -80,7 +80,15 @@ fieldset { margin: 30px 0 0; padding: 0; border: 0; }
 .agency-stamp { width: 72px; padding: 8px; border: 1px solid var(--ink); text-align: center; text-transform: uppercase; font-size: 9px; }.agency-stamp.dart { background: var(--blue); color: white; }.agency-stamp.unitrans { background: var(--lime); }.agency-stamp.yolobus { background: var(--signal); color: white; }
 .trip-path { display: flex; gap: 10px; align-items: baseline; }.trip-path span { opacity: .45; font-size: 10px; }.trip-meta { font-size: 10px; line-height: 1.6; text-transform: uppercase; }
 .status { min-width: 78px; padding: 9px; border: 1px solid var(--ink); background: transparent; text-transform: uppercase; font-size: 9px; }.status.active { background: var(--ink); color: var(--paper); }.status.paused { opacity: .5; }
+.status.past { display: inline-block; text-align: center; opacity: .45; }
 .no-trips { padding: 35px 0; opacity: .55; }
+.trip-drawer { border-bottom: 1px solid var(--ink); }
+.trip-drawer-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 24px 0; border: 0; background: transparent; color: var(--ink); text-align: left; text-transform: uppercase; }
+.trip-drawer-toggle > span:first-child { display: grid; gap: 6px; font: 28px var(--display); letter-spacing: -.04em; }
+.trip-drawer-toggle small { font: 600 9px var(--mono); letter-spacing: .13em; }
+.drawer-meta { display: flex; align-items: center; gap: 20px; }.drawer-meta b { color: var(--signal); font: 24px var(--display); }.drawer-meta i { width: 30px; font: 26px/1 var(--mono); text-align: center; }
+.trip-drawer-panel { border-top: 1px solid var(--ink); }
+.drawer-loading { padding: 30px 0; opacity: .55; font-size: 11px; }
 footer { display: flex; justify-content: space-between; padding: 28px 5vw; border-top: 1px solid var(--ink); text-transform: uppercase; font-size: 9px; letter-spacing: .1em; }
 .join-page { display: grid; place-items: center; }.join-card { width: min(520px,90vw); padding: 56px; border: 1px solid var(--ink); }.join-card h1 { font-size: 54px; margin: 0 0 20px; }.join-card input { margin: 10px 0 20px; }
 @keyframes pulse { 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }

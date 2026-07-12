@@ -2,8 +2,9 @@ import hashlib
 import hmac
 import time
 from dataclasses import asdict
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -100,11 +101,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     async def dashboard(request: Request) -> HTMLResponse:
         user_id = current_user_id(request)
+        now = datetime.now(tz=UTC)
+        trip_counts = database.dashboard_trip_counts(user_id, now)
         return templates.TemplateResponse(
             request,
             "dashboard.html",
             {
-                "trips": database.list_trips(user_id),
+                "trips": database.list_dashboard_trips(user_id, "monitored", now),
+                "trip_counts": trip_counts,
                 "demo_mode": settings.demo_mode,
                 "agencies": AGENCIES.values(),
                 "telegram_available": telegram is not None,
@@ -158,6 +162,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return {"suggestions": []}
         suggestions = await google.autocomplete(q.strip(), agency_id, session_token)
         return {"suggestions": [asdict(item) for item in suggestions]}
+
+    @app.get("/api/trips/{view}", response_class=HTMLResponse)
+    async def trip_rows(
+        request: Request, view: Literal["paused", "past"]
+    ) -> HTMLResponse:
+        trips = database.list_dashboard_trips(current_user_id(request), view)
+        return templates.TemplateResponse(
+            request,
+            "_trip_rows.html",
+            {"trips": trips, "trip_view": view},
+        )
 
     @app.post("/api/trips", status_code=201)
     async def save_trip(request: Request, payload: SaveTripRequest) -> dict[str, int]:
