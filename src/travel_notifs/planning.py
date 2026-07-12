@@ -144,7 +144,11 @@ class DemoPlanner:
         destination: str,
         travel_at: datetime,
     ) -> list[Itinerary]:
-        route = "239" if agency_id == AgencyId.DART else "V"
+        route = {
+            AgencyId.DART: "239",
+            AgencyId.UNITRANS: "V",
+            AgencyId.YOLOBUS: "42A",
+        }[agency_id]
         agency = AGENCIES[agency_id]
         results = []
         for index, offset in enumerate((0, 8, 17), start=1):

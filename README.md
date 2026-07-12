@@ -1,6 +1,6 @@
 # Transit Dispatch
 
-An invite-only arrival notification service for DART and Unitrans. Users plan
+An invite-only arrival notification service for DART, Unitrans, and Yolobus. Users plan
 one-time or recurring trips, choose an itinerary, and receive the vehicle's
 predicted arrival time at each boarding stop.
 
@@ -10,7 +10,7 @@ The product deliberately does **not** calculate when a rider should leave.
 
 The repository contains the first runnable vertical slice:
 
-- DART and Unitrans agency registry.
+- DART, Unitrans, and Yolobus agency registry.
 - Google Places and Routes provider shared by every launch agency.
 - Milestone, ETA-change, cancellation, stale-feed, and recovery alert logic.
 - Telegram, Resend email, and dry-run notification providers.
@@ -37,7 +37,7 @@ uvicorn travel_notifs.web:app --reload
 ```
 
 The web application starts in demo mode when `GOOGLE_MAPS_API_KEY` is empty.
-Demo mode returns representative DART and Unitrans itineraries and never sends
+Demo mode returns representative DART, Unitrans, and Yolobus itineraries and never sends
 external notifications.
 
 ## Deployment

@@ -79,3 +79,9 @@ def test_cancellation_is_sent_once() -> None:
 def test_message_never_tells_user_when_to_leave() -> None:
     result = AlertEngine().evaluate(prediction(), AlertState(), NOW)
     assert "leave" not in result.message.lower()
+
+
+def test_message_uses_agency_local_timezone() -> None:
+    result = AlertEngine().evaluate(prediction(), AlertState(), NOW)
+    assert "10:10 AM CDT" in result.message
+    assert "3:10 PM" not in result.message

@@ -13,5 +13,11 @@ def test_detects_unitrans_region() -> None:
     assert agency.id == AgencyId.UNITRANS
 
 
+def test_detects_yolobus_between_davis_and_sacramento() -> None:
+    agency = agency_for_trip((38.5449, -121.7405), (38.5816, -121.4944))
+    assert agency is not None
+    assert agency.id == AgencyId.YOLOBUS
+
+
 def test_rejects_cross_region_trip() -> None:
     assert agency_for_trip((32.7767, -96.7970), (38.5382, -121.7617)) is None

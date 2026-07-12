@@ -27,6 +27,7 @@ async def test_dashboard_renders(tmp_path: Path) -> None:
     assert "Know the minute" in response.text
     assert "DART" in response.text
     assert "Unitrans" in response.text
+    assert "Yolobus" in response.text
 
 
 async def test_demo_planner_returns_itineraries(tmp_path: Path) -> None:
@@ -44,6 +45,27 @@ async def test_demo_planner_returns_itineraries(tmp_path: Path) -> None:
         )
     assert response.status_code == 200
     assert len(response.json()["itineraries"]) == 3
+
+
+async def test_dashboard_displays_trip_in_agency_timezone(tmp_path: Path) -> None:
+    transport = httpx.ASGITransport(app=app_for(tmp_path))
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as web:
+        created = await web.post(
+            "/api/trips",
+            json={
+                "origin": "Davis",
+                "destination": "Sacramento Airport",
+                "travel_at": "2026-07-12T04:30:00+00:00",
+                "timing_mode": "depart",
+                "agency_id": "yolobus",
+                "recurrence": "once",
+                "itinerary_id": "42b",
+            },
+        )
+        response = await web.get("/")
+
+    assert created.status_code == 201
+    assert "2026-07-11 21:30 PDT" in response.text
 
 
 async def test_invitation_creates_production_session(tmp_path: Path) -> None:

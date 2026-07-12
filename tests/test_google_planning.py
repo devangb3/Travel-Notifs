@@ -50,6 +50,19 @@ def test_normalizes_google_transit_leg() -> None:
     assert itineraries[0].legs[0].fingerprint
 
 
+def test_normalizes_yolobus_operator_and_route() -> None:
+    payload = dart_response()
+    details = payload["routes"][0]["legs"][0]["steps"][1]["transitDetails"]
+    details["transitLine"]["agencies"] = [{"name": "Yolo County Transportation District"}]
+    details["transitLine"]["nameShort"] = "42B"
+
+    itineraries = normalize_routes(payload, AgencyId.YOLOBUS)
+
+    assert len(itineraries) == 1
+    assert itineraries[0].legs[0].route == "42B"
+    assert itineraries[0].legs[0].agency == "Yolo County Transportation District"
+
+
 async def test_google_provider_sends_transit_request() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["x-goog-api-key"] == "secret"

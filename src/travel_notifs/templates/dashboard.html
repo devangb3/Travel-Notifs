@@ -26,7 +26,7 @@
 
     <main>
       <section class="hero">
-        <p class="eyebrow">Arrival intelligence · DART + Unitrans</p>
+        <p class="eyebrow">Arrival intelligence · DART + Unitrans + Yolobus</p>
         <h1>Know the minute.<br><span>Make your own call.</span></h1>
         <p class="lede">Choose a trip. We watch the live feed and message you when the arrival moves.</p>
       </section>
@@ -136,7 +136,7 @@
                 <strong>{{ trip.destination_label }}</strong>
               </div>
               <div class="trip-meta">
-                {{ trip.timing_mode }} · {{ trip.travel_at[0:16]|replace('T', ' ') }}
+                {{ trip.timing_mode }} · {{ trip.travel_at|trip_time(trip.agency_id) }}
                 {% if trip.recurrence == 'weekly' %}<br>weekly · {{ trip.weekdays }}{% endif %}
               </div>
               <form action="/api/trips/{{ trip.id }}/status" method="post">

@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
-from travel_notifs.agencies import AGENCIES, AgencyId
+from travel_notifs.agencies import AGENCIES, AgencyId, agency_local_time
 from travel_notifs.config import Settings, get_settings
 from travel_notifs.notifications import NotificationError, TelegramNotifier
 from travel_notifs.planning import DemoPlanner, GoogleTransitProvider, PlanningError
@@ -53,6 +53,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.planner = google or demo_planner
     app.mount("/static", StaticFiles(directory=PACKAGE_ROOT / "static"), name="static")
     templates = Jinja2Templates(directory=PACKAGE_ROOT / "templates")
+
+    def format_trip_time(value: str, agency_id: str) -> str:
+        local = agency_local_time(datetime.fromisoformat(value), agency_id)
+        return local.strftime("%Y-%m-%d %H:%M %Z")
+
+    templates.env.filters["trip_time"] = format_trip_time
 
     def sign_user(user_id: int) -> str:
         expires = int(time.time()) + 30 * 24 * 60 * 60

@@ -1,6 +1,7 @@
 from datetime import datetime
 from hashlib import sha256
 
+from travel_notifs.agencies import agency_local_time
 from travel_notifs.domain import (
     AlertDecision,
     AlertState,
@@ -101,11 +102,15 @@ class AlertEngine:
 def format_prediction(prediction: StopPrediction, reasons: tuple[str, ...]) -> str:
     agency = prediction.agency_id.upper()
     scheduled = (
-        prediction.scheduled_arrival.strftime("%-I:%M %p")
+        agency_local_time(prediction.scheduled_arrival, prediction.agency_id).strftime(
+            "%-I:%M %p %Z"
+        )
         if prediction.scheduled_arrival
         else "unavailable"
     )
-    updated = prediction.feed_timestamp.strftime("%-I:%M %p")
+    updated = agency_local_time(prediction.feed_timestamp, prediction.agency_id).strftime(
+        "%-I:%M %p %Z"
+    )
 
     if "cancelled" in reasons:
         return (
@@ -126,7 +131,9 @@ def format_prediction(prediction: StopPrediction, reasons: tuple[str, ...]) -> s
             f"Last live update: {updated}."
         )
 
-    expected = prediction.effective_arrival.strftime("%-I:%M %p")
+    expected = agency_local_time(prediction.effective_arrival, prediction.agency_id).strftime(
+        "%-I:%M %p %Z"
+    )
     delay = prediction.delay_minutes
     status = ""
     if delay is not None:
